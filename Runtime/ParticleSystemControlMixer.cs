@@ -99,9 +99,9 @@ public class ParticleSystemControlMixer : PlayableBehaviour
         }
 
         // Retrieve the track time (playhead position) from the root playable.
-        var rootPlayable = playable.GetGraph().GetRootPlayable(0);
-        var time = (float)rootPlayable.GetTime();
-
+        // var rootPlayable = playable.GetGraph().GetRootPlayable(0);
+        // var time = (float)rootPlayable.GetTime();
+        
         // Edit mode: Re-prepare the particle system every frame.
         if (!Application.isPlaying && !particleSystem.isPlaying)
             PrepareParticleSystem(playable);
@@ -126,30 +126,39 @@ public class ParticleSystemControlMixer : PlayableBehaviour
         var totalOverTime = 0.0f;
         var totalOverDist = 0.0f;
 
+        var time = 0f;
+        
         var clipCount = playable.GetInputCount();
         for (var i = 0; i < clipCount; i++)
         {
-            var clip = ((ScriptPlayable<ParticleSystemControlPlayable>)playable.GetInput(i)).GetBehaviour();
+            var inputPlayable = (ScriptPlayable<ParticleSystemControlPlayable>) playable.GetInput(i);
+            var clip = inputPlayable.GetBehaviour();
             var w = playable.GetInputWeight(i);
             totalOverTime += clip.rateOverTime * w;
             totalOverDist += clip.rateOverDistance * w;
+            
+            // これ複数クリップに対応してない
+            time = (float)inputPlayable.GetTime();
         }
 
         var em = particleSystem.emission;
         em.rateOverTimeMultiplier = totalOverTime;
         em.rateOverDistanceMultiplier = totalOverDist;
-
+        
         // Time control
         if (Application.isPlaying)
         {
-            // Play mode time control: Only resets the simulation when a large
-            // gap between the time variables was found.
-            var maxDelta = Mathf.Max(1.0f / 30, Time.smoothDeltaTime * 2);
-
-            if (Mathf.Abs(time - particleSystem.time) > maxDelta)
+            if (time > 0f)
             {
-                ResetSimulation(time);
-                particleSystem.Play();
+                // Play mode time control: Only resets the simulation when a large
+                // gap between the time variables was found.
+                var maxDelta = Mathf.Max(1.0f / 30, Time.smoothDeltaTime * 2);
+
+                if (Mathf.Abs(time - particleSystem.time) > maxDelta)
+                {
+                    ResetSimulation(time);
+                    particleSystem.Play();
+                }
             }
         }
         else
