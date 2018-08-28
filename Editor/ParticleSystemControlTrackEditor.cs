@@ -18,7 +18,11 @@ class ParticleSystemControlTrackEditor : Editor
     {
         // Use the current active director as an editing context.
         _editor = Editor.CreateEditorWithContext(
+#if UNITY_2018_2_OR_NEWER
+            targets, TimelineEditor.masterDirector,
+#else
             targets, TimelineEditor.playableDirector,
+#endif
             typeof(ParticleSystemControlTrackEditor2)
         );
     }
